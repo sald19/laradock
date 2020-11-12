@@ -1,19 +1,24 @@
 {
-	"authHost": "localhost",
-	"authEndpoint": "/broadcasting/auth",
-	"clients": [],
-	"database": "redis",
-	"databaseConfig": {
-		"redis": {
-			"port": "6379",
-			"host": "redis"
-		}
-	},
-	"devMode": true,
-	"host": null,
-	"port": "6001",
-	"protocol": "http",
-	"socketio": {},
-	"sslCertPath": "",
-	"sslKeyPath": ""
+  "authHost": "localhost",
+  "authEndpoint": "/broadcasting/auth",
+  "clients": [
+    {
+      "appId": "fb84807a332b0b6e",
+      "key": "aef04c89f51108c0ec6b822bb42fcc2e"
+    }
+  ],
+  "database": "redis",
+  "databaseConfig": {
+    "redis": {
+      "port": "6379",
+      "host": "redis"
+    }
+  },
+  "devMode": true,
+  "host": null,
+  "port": "6001",
+  "protocol": "http",
+  "socketio": {},
+  "sslCertPath": "",
+  "sslKeyPath": ""
 }
