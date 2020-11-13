@@ -373,8 +373,11 @@ services:
       depends_on:
         - php-fpm
       networks:
-        - frontend
-        - backend
+        frontend:
+        backend:
+          aliases:
+            - sharelov.test
+            - io.sharelov.test
 
 ### Blackfire ########################################
     blackfire:
