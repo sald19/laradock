@@ -1,5 +1,5 @@
 {
-  "authHost": "localhost",
+  "authHost": "http://sharelov.test",
   "authEndpoint": "/broadcasting/auth",
   "clients": [
     {
