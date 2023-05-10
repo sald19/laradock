@@ -318,7 +318,7 @@ services:
       links:
         - docker-in-docker
 
-    ### PHP-FPM ##############################################
+### PHP-FPM ##############################################
     php-fpm7.2:
       build:
         context: ./php-fpm
@@ -410,7 +410,7 @@ services:
       links:
         - docker-in-docker
 
-    ### PHP-FPM ##############################################
+### PHP-FPM ##############################################
     php-fpm8.0:
       build:
         context: ./php-fpm
