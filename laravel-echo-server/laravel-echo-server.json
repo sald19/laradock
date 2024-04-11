@@ -19,7 +19,16 @@
   "host": null,
   "port": "6001",
   "protocol": "http",
-  "socketio": {},
+  "socketio": {
+    "initial_headers": {
+      "user-agent": "node-XMLHttpRequest"
+    },
+    "initialPacket": {
+      "headers": {
+        "user-agent": "node-XMLHttpRequest"
+      }
+    }
+  },
   "sslCertPath": "",
   "sslKeyPath": ""
 }
