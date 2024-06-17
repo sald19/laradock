@@ -1,0 +1,8 @@
+[program:laravel-horizon]
+process_name=%(program_name)s_%(process_num)02d
+user=laradock
+command=php /var/www/php/mis_app/artisan reverb:start --debug --port=9090 --hostname="reverb.laravel-10.test"
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/www/php/mis_app/storage/logs/reverb.log
