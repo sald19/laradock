@@ -1268,6 +1268,30 @@ ENV IMAGEMAGICK_VERSION ${IMAGEMAGICK_VERSION}
 
 RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
   apt-get install -y libmagickwand-dev imagemagick && \
+  apt-get install -y \
+  libde265-dev \
+  libdjvulibre-dev \
+  libfftw3-dev \
+  libghc-bzlib-dev \
+  libgoogle-perftools-dev \
+  libgraphviz-dev \
+  libgs-dev \
+  libheif-dev \
+  libjbig-dev \
+  libjemalloc-dev \
+  libjpeg-dev \
+  liblcms2-dev \
+  liblqr-1-0-dev \
+  liblzma-dev \
+  libopenexr-dev \
+  libpango1.0-dev \
+  libraqm-dev \
+  libraw-dev \
+  libtiff-dev \
+  libwebp-dev \
+  libwmf-dev \
+  libzip-dev \
+  libzstd-dev && \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
   apt-get install -y git && \
   cd /tmp && \
