@@ -315,7 +315,13 @@ RUN set -eux; \
   # SMB:
   ###########################################################################
   if [ ${INSTALL_SMB} = true ]; then \
-  apt-get install -yqq smbclient php${LARADOCK_PHP_VERSION}-smbclient coreutils; \
+  apt-get install -yqq smbclient libsmbclient-dev php${LARADOCK_PHP_VERSION}-smbclient coreutils && \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+  pecl install smbclient; \
+  else \
+  pecl install smbclient-1.1.2; \
+  fi && \
+  echo "extension=smbclient.so" >> /etc/php/${LARADOCK_PHP_VERSION}/cli/php.ini; \
   fi; \
   ###########################################################################
   # IMAP:
@@ -580,10 +586,11 @@ RUN set -eux; \
   echo '' | pecl -q install swoole-4.5.11; \
   elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
   echo '' | pecl -q install swoole-4.8.12; \
-  elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+  elif [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
   echo '' | pecl -q install swoole-5.1.2; \
   else \
-  echo '' | pecl -q install swoole; \
+  apt-get install -yqq libbrotli-dev && \
+  echo '' | pecl -q  install swoole; \
   fi; \
   echo "extension=swoole.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/swoole.ini; \
   ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/swoole.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-swoole.ini; \
@@ -703,7 +710,7 @@ RUN if [ ${INSTALL_GRAPHVIZ} = true ]; then \
 ARG INSTALL_IONCUBE=false
 
 RUN if [ ${INSTALL_IONCUBE} = true ]; then \
-  if [ ${LARADOCK_PHP_VERSION} != "8.3" ] \
+  if [ ${LARADOCK_PHP_VERSION} != "8.4" ] \
   && [ ${LARADOCK_PHP_VERSION} != "8.0" ]; then \
   # Install the php ioncube loader
   curl -L -o /tmp/ioncube_loaders_lin_x86-64.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_loaders_lin_x86-64.tar.gz \
@@ -847,7 +854,7 @@ RUN if [ ${INSTALL_PNPM} = true ]; then \
   echo "" >> ~/.bashrc && \
   echo 'export PNPM_HOME="/home/laradock/.local/share/pnpm"' >> ~/.bashrc && \
   echo 'export PATH="$PNPM_HOME:$PATH"' >> ~/.bashrc && \
-  npx pnpm add -g pnpm \
+  npm install -g pnpm \
   ;fi
 
 
