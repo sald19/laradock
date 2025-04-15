@@ -220,7 +220,7 @@ RUN if [ ${INSTALL_XDEBUG} = true ]; then \
   # https://xdebug.org/docs/compat
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  pecl install xdebug-3.3.0; \
+  pecl install xdebug-3.4.1; \
   else \
   pecl install xdebug-3.1.6; \
   fi; \
@@ -370,14 +370,22 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
   docker-php-ext-enable mongo; \
   php -m | grep -oiE '^mongo$'; \
   else \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "4" ]; then \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
   if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
   pecl install mongodb-1.9.2; \
   else \
+  if [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ]; then \
+  pecl install mongodb-1.20.1; \
+  else \
   pecl install mongodb-1.16.2; \
   fi; \
+  fi; \
+  else \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
+  pecl install mongodb-1.20.1; \
   else \
   pecl install mongodb; \
+  fi; \
   fi; \
   docker-php-ext-enable mongodb; \
   php -m | grep -oiE '^mongodb$'; \
@@ -829,7 +837,11 @@ RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
   cd /tmp && \
   if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
+  if [ ${LARADOCK_PHP_VERSION} = "8.4" ]; then \
+  git clone --branch develop https://github.com/Imagick/imagick; \
+  else \
   git clone https://github.com/Imagick/imagick; \
+  fi; \
   else \
   git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
   fi && \

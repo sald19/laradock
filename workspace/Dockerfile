@@ -350,11 +350,11 @@ RUN if [ ${INSTALL_XDEBUG} = true ]; then \
   # https://xdebug.org/docs/compat
   apt-get install -yqq pkg-config php-xml php${LARADOCK_PHP_VERSION}-xml && \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  pecl install xdebug-3.3.0; \
-  else \
-  pecl install xdebug-3.1.6; \
-  fi; \
+    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+      pecl install xdebug-3.4.1; \
+    else \
+      pecl install xdebug-3.1.6; \
+    fi; \
   else \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
   pecl install xdebug-2.5.5; \
@@ -462,28 +462,36 @@ RUN if [ ${INSTALL_WORKSPACE_SSH} = true ]; then \
 ARG INSTALL_MONGO=false
 
 RUN if [ ${INSTALL_MONGO} = true ]; then \
-  # Install the mongodb extension
-  apt-get install -yqq pkg-config && \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-  pecl install mongo; \
-  echo "extension=mongo.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini; \
-  ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongo.ini; \
-  php -m | grep -oiE '^mongo$'; \
-  else \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "4" ]; then \
-  if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
-  pecl install mongodb-1.9.2; \
-  else \
-  pecl install mongodb-1.16.2; \
-  fi; \
-  else \
-  pecl install mongodb; \
-  fi; \
-  echo "extension=mongodb.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini; \
-  ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
-  php -m | grep -oiE '^mongodb$'; \
-  fi; \
-  fi
+    # Install the mongodb extension
+    apt-get install -yqq pkg-config && \
+    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
+      pecl install mongo; \
+      echo "extension=mongo.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini; \
+      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongo.ini; \
+      php -m | grep -oiE '^mongo$'; \
+    else \
+      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
+        if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
+          pecl install mongodb-1.9.2; \
+        else \
+          if [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ]; then \
+            pecl install mongodb-1.20.1; \
+          else \
+            pecl install mongodb-1.16.2; \
+          fi; \
+        fi; \
+      else \
+        if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
+            pecl install mongodb-1.20.1; \
+        else \
+            pecl install mongodb; \
+        fi; \
+      fi; \
+      echo "extension=mongodb.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini; \
+      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
+      php -m | grep -oiE '^mongodb$'; \
+    fi; \
+fi
 
 ###########################################################################
 # AMQP:
@@ -1271,52 +1279,32 @@ ARG IMAGEMAGICK_VERSION=latest
 ENV IMAGEMAGICK_VERSION ${IMAGEMAGICK_VERSION}
 
 RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
-  apt-get install -y libmagickwand-dev imagemagick && \
-  apt-get install -y \
-  libde265-dev \
-  libdjvulibre-dev \
-  libfftw3-dev \
-  libghc-bzlib-dev \
-  libgoogle-perftools-dev \
-  libgraphviz-dev \
-  libgs-dev \
-  libheif-dev \
-  libjbig-dev \
-  libjemalloc-dev \
-  libjpeg-dev \
-  liblcms2-dev \
-  liblqr-1-0-dev \
-  liblzma-dev \
-  libopenexr-dev \
-  libpango1.0-dev \
-  libraqm-dev \
-  libraw-dev \
-  libtiff-dev \
-  libwebp-dev \
-  libwmf-dev \
-  libzip-dev \
-  libzstd-dev && \
-  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-  apt-get install -y git && \
-  cd /tmp && \
-  if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
-  git clone https://github.com/Imagick/imagick; \
-  else \
-  git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
-  fi && \
-  cd imagick && \
-  phpize && \
-  ./configure && \
-  make && \
-  make install && \
-  rm -r /tmp/imagick; \
-  else \
-  pecl install imagick; \
-  fi && \
-  echo "extension=imagick.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini && \
-  ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-imagick.ini && \
-  php -m | grep -q 'imagick' \
-  ;fi
+    apt-get install -y libmagickwand-dev imagemagick && \
+    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+      apt-get install -y git && \
+      cd /tmp && \
+      if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
+        if [ ${LARADOCK_PHP_VERSION} = "8.4" ]; then \
+          git clone --branch develop https://github.com/Imagick/imagick; \
+        else \
+          git clone https://github.com/Imagick/imagick; \
+        fi; \
+      else \
+        git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
+      fi && \
+      cd imagick && \
+      phpize && \
+      ./configure && \
+      make && \
+      make install && \
+      rm -r /tmp/imagick; \
+    else \
+      pecl install imagick; \
+    fi && \
+    echo "extension=imagick.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini && \
+    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-imagick.ini && \
+    php -m | grep -q 'imagick' \
+;fi
 
 ###########################################################################
 # Terraform:
