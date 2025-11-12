@@ -47,12 +47,50 @@ ENV PUID ${PUID}
 ARG PGID=1000
 ENV PGID ${PGID}
 
+# Set apt-get options:
+ARG WORKSPACE_ALLOW_RELEASE_INFO_CHANGE=false
+ENV WORKSPACE_ALLOW_RELEASE_INFO_CHANGE ${WORKSPACE_ALLOW_RELEASE_INFO_CHANGE}
+
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
   apt-get update -yqq && \
   pecl channel-update pecl.php.net && \
   groupadd -g ${PGID} laradock && \
   useradd -l -u ${PUID} -g laradock -m laradock -G docker_env && \
+  usermod -p "*" laradock -s /bin/bash && \
+  apt-get install -yqq \
+  apt-utils \
+  #
+  #--------------------------------------------------------------------------
+  # Mandatory Software's Installation
+  #--------------------------------------------------------------------------
+  #
+  # Mandatory Software's such as ("php-cli", "git", "vim", ....) are
+  # installed on the base image 'laradock/workspace' image. If you want
+  # to add more Software's or remove existing one, you need to edit the
+  # base image (https://github.com/Laradock/workspace).
+  #
+  # next lines are here because there is no auto build on dockerhub see https://github.com/laradock/laradock/pull/1903#issuecomment-463142846
+  libzip-dev zip unzip \
+  # Install the zip extension
+  php${LARADOCK_PHP_VERSION}-zip \
+  # nasm
+  nasm && \
+  php -m | grep -q 'zip'
+if [ ${WORKSPACE_ALLOW_RELEASE_INFO_CHANGE} = true ]; then \
+  APT_GET_UPDATE_OPTIONS="--allow-releaseinfo-change"; \
+  else \
+  APT_GET_UPDATE_OPTIONS=""; \
+  fi; \
+  apt-get update -yqq ${APT_GET_UPDATE_OPTIONS} && \
+  pecl channel-update pecl.php.net && \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") != "0" ]; then \
+  groupmod --new-name laradock ubuntu; \
+  usermod --login laradock ubuntu --move-home --home /home/laradock; \
+  else \
+  groupadd -g ${PGID} laradock; \
+  useradd -l -u ${PUID} -g laradock -m laradock -G docker_env; \
+  fi; \
   usermod -p "*" laradock -s /bin/bash && \
   apt-get install -yqq \
   apt-utils \
@@ -111,11 +149,20 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
   echo "# Load Custom Aliases" >> ~/.bashrc && \
   echo "source ~/aliases.sh" >> ~/.bashrc && \
   echo "" >> ~/.bashrc
+sed -i 's/\r//' /home/laradock/aliases.sh && \
+  chown laradock:laradock /home/laradock/aliases.sh && \
+  echo "" >> ~/.bashrc && \
+  echo "# Load Custom Aliases" >> ~/.bashrc && \
+  echo "source ~/aliases.sh" >> ~/.bashrc && \
+  echo "" >> ~/.bashrc
 
 USER laradock
 
 RUN echo "" >> ~/.bashrc && \
   echo "# Load Custom Aliases" >> ~/.bashrc && \
+  echo "source ~/aliases.sh" >> ~/.bashrc && \
+  echo "" >> ~/.bashrc
+echo "# Load Custom Aliases" >> ~/.bashrc && \
   echo "source ~/aliases.sh" >> ~/.bashrc && \
   echo "" >> ~/.bashrc
 
@@ -350,11 +397,11 @@ RUN if [ ${INSTALL_XDEBUG} = true ]; then \
   # https://xdebug.org/docs/compat
   apt-get install -yqq pkg-config php-xml php${LARADOCK_PHP_VERSION}-xml && \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] || { [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ] && { [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "3" ] ;} ;}; then \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      pecl install xdebug-3.4.1; \
-    else \
-      pecl install xdebug-3.1.6; \
-    fi; \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+  pecl install xdebug-3.4.1; \
+  else \
+  pecl install xdebug-3.1.6; \
+  fi; \
   else \
   if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
   pecl install xdebug-2.5.5; \
@@ -462,36 +509,36 @@ RUN if [ ${INSTALL_WORKSPACE_SSH} = true ]; then \
 ARG INSTALL_MONGO=false
 
 RUN if [ ${INSTALL_MONGO} = true ]; then \
-    # Install the mongodb extension
-    apt-get install -yqq pkg-config && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
-      pecl install mongo; \
-      echo "extension=mongo.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini; \
-      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongo.ini; \
-      php -m | grep -oiE '^mongo$'; \
-    else \
-      if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
-        if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
-          pecl install mongodb-1.9.2; \
-        else \
-          if [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ]; then \
-            pecl install mongodb-1.20.1; \
-          else \
-            pecl install mongodb-1.16.2; \
-          fi; \
-        fi; \
-      else \
-        if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
-            pecl install mongodb-1.20.1; \
-        else \
-            pecl install mongodb; \
-        fi; \
-      fi; \
-      echo "extension=mongodb.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini; \
-      ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
-      php -m | grep -oiE '^mongodb$'; \
-    fi; \
-fi
+  # Install the mongodb extension
+  apt-get install -yqq pkg-config && \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "5" ]; then \
+  pecl install mongo; \
+  echo "extension=mongo.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini; \
+  ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongo.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongo.ini; \
+  php -m | grep -oiE '^mongo$'; \
+  else \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "7" ]; then \
+  if [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ] || [ $(php -r "echo PHP_MINOR_VERSION;") = "1" ]; then \
+  pecl install mongodb-1.9.2; \
+  else \
+  if [ $(php -r "echo PHP_MINOR_VERSION;") = "4" ]; then \
+  pecl install mongodb-1.20.1; \
+  else \
+  pecl install mongodb-1.16.2; \
+  fi; \
+  fi; \
+  else \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ] && [ $(php -r "echo PHP_MINOR_VERSION;") = "0" ]; then \
+  pecl install mongodb-1.20.1; \
+  else \
+  pecl install mongodb; \
+  fi; \
+  fi; \
+  echo "extension=mongodb.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini; \
+  ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/mongodb.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/30-mongodb.ini; \
+  php -m | grep -oiE '^mongodb$'; \
+  fi; \
+  fi
 
 ###########################################################################
 # AMQP:
@@ -1279,32 +1326,32 @@ ARG IMAGEMAGICK_VERSION=latest
 ENV IMAGEMAGICK_VERSION ${IMAGEMAGICK_VERSION}
 
 RUN if [ ${INSTALL_IMAGEMAGICK} = true ]; then \
-    apt-get install -y libmagickwand-dev imagemagick && \
-    if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
-      apt-get install -y git && \
-      cd /tmp && \
-      if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
-        if [ ${LARADOCK_PHP_VERSION} = "8.4" ]; then \
-          git clone --branch develop https://github.com/Imagick/imagick; \
-        else \
-          git clone https://github.com/Imagick/imagick; \
-        fi; \
-      else \
-        git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
-      fi && \
-      cd imagick && \
-      phpize && \
-      ./configure && \
-      make && \
-      make install && \
-      rm -r /tmp/imagick; \
-    else \
-      pecl install imagick; \
-    fi && \
-    echo "extension=imagick.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini && \
-    ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-imagick.ini && \
-    php -m | grep -q 'imagick' \
-;fi
+  apt-get install -y libmagickwand-dev imagemagick && \
+  if [ $(php -r "echo PHP_MAJOR_VERSION;") = "8" ]; then \
+  apt-get install -y git && \
+  cd /tmp && \
+  if [ ${IMAGEMAGICK_VERSION} = "latest" ]; then \
+  if [ ${LARADOCK_PHP_VERSION} = "8.4" ]; then \
+  git clone --branch develop https://github.com/Imagick/imagick; \
+  else \
+  git clone https://github.com/Imagick/imagick; \
+  fi; \
+  else \
+  git clone --branch ${IMAGEMAGICK_VERSION} https://github.com/Imagick/imagick; \
+  fi && \
+  cd imagick && \
+  phpize && \
+  ./configure && \
+  make && \
+  make install && \
+  rm -r /tmp/imagick; \
+  else \
+  pecl install imagick; \
+  fi && \
+  echo "extension=imagick.so" >> /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini && \
+  ln -s /etc/php/${LARADOCK_PHP_VERSION}/mods-available/imagick.ini /etc/php/${LARADOCK_PHP_VERSION}/cli/conf.d/20-imagick.ini && \
+  php -m | grep -q 'imagick' \
+  ;fi
 
 ###########################################################################
 # Terraform:
@@ -1529,7 +1576,7 @@ RUN if [ ${INSTALL_POPPLER_UTILS} = true ]; then \
 USER root
 
 ARG INSTALL_WKHTMLTOPDF=false
-ARG WKHTMLTOPDF_VERSION=0.12.6-1
+ARG WKHTMLTOPDF_VERSION=0.12.6.1-3
 
 RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
   ARCH=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) \
