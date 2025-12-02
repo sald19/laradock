@@ -53,31 +53,7 @@ ENV WORKSPACE_ALLOW_RELEASE_INFO_CHANGE ${WORKSPACE_ALLOW_RELEASE_INFO_CHANGE}
 
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
-  apt-get update -yqq && \
-  pecl channel-update pecl.php.net && \
-  groupadd -g ${PGID} laradock && \
-  useradd -l -u ${PUID} -g laradock -m laradock -G docker_env && \
-  usermod -p "*" laradock -s /bin/bash && \
-  apt-get install -yqq \
-  apt-utils \
-  #
-  #--------------------------------------------------------------------------
-  # Mandatory Software's Installation
-  #--------------------------------------------------------------------------
-  #
-  # Mandatory Software's such as ("php-cli", "git", "vim", ....) are
-  # installed on the base image 'laradock/workspace' image. If you want
-  # to add more Software's or remove existing one, you need to edit the
-  # base image (https://github.com/Laradock/workspace).
-  #
-  # next lines are here because there is no auto build on dockerhub see https://github.com/laradock/laradock/pull/1903#issuecomment-463142846
-  libzip-dev zip unzip \
-  # Install the zip extension
-  php${LARADOCK_PHP_VERSION}-zip \
-  # nasm
-  nasm && \
-  php -m | grep -q 'zip'
-if [ ${WORKSPACE_ALLOW_RELEASE_INFO_CHANGE} = true ]; then \
+  if [ ${WORKSPACE_ALLOW_RELEASE_INFO_CHANGE} = true ]; then \
   APT_GET_UPDATE_OPTIONS="--allow-releaseinfo-change"; \
   else \
   APT_GET_UPDATE_OPTIONS=""; \
@@ -149,20 +125,11 @@ RUN sed -i 's/\r//' /root/aliases.sh && \
   echo "# Load Custom Aliases" >> ~/.bashrc && \
   echo "source ~/aliases.sh" >> ~/.bashrc && \
   echo "" >> ~/.bashrc
-sed -i 's/\r//' /home/laradock/aliases.sh && \
-  chown laradock:laradock /home/laradock/aliases.sh && \
-  echo "" >> ~/.bashrc && \
-  echo "# Load Custom Aliases" >> ~/.bashrc && \
-  echo "source ~/aliases.sh" >> ~/.bashrc && \
-  echo "" >> ~/.bashrc
 
 USER laradock
 
 RUN echo "" >> ~/.bashrc && \
   echo "# Load Custom Aliases" >> ~/.bashrc && \
-  echo "source ~/aliases.sh" >> ~/.bashrc && \
-  echo "" >> ~/.bashrc
-echo "# Load Custom Aliases" >> ~/.bashrc && \
   echo "source ~/aliases.sh" >> ~/.bashrc && \
   echo "" >> ~/.bashrc
 
@@ -825,7 +792,7 @@ ENV NVM_NODEJS_ORG_MIRROR ${NVM_NODEJS_ORG_MIRROR}
 RUN if [ ${INSTALL_NODE} = true ]; then \
   # Install nvm (A Node Version Manager)
   mkdir -p $NVM_DIR && \
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash \
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \
   && . $NVM_DIR/nvm.sh \
   && nvm install ${NODE_VERSION} \
   && nvm use ${NODE_VERSION} \
@@ -1591,8 +1558,8 @@ RUN if [ ${INSTALL_WKHTMLTOPDF} = true ]; then \
   xfonts-base \
   xfonts-75dpi \
   wget \
-  && wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.focal_${ARCH}.deb" \
-  && dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.focal_${ARCH}.deb" \
+  && wget "https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.jammy_${ARCH}.deb" \
+  && dpkg -i "wkhtmltox_${WKHTMLTOPDF_VERSION}.jammy_${ARCH}.deb" \
   && apt -f install \
   ;fi
 
